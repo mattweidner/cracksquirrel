@@ -46,8 +46,9 @@ def bot_callback(message):
         print("[!]     ", message)
         return
     if m["type"] == "message":
-        print("T:", m["team"], "C:", m["channel"], "U:", m["user"])
-        print(m["text"])
+        print("[DEBUG] T:", m["team"], "C:", m["channel"], "U:", m["user"])
+        print("[DEBUG]", text"])
+
     else:
         print(m)
 

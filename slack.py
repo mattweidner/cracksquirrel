@@ -5,14 +5,17 @@
 #
 
 import asyncio
+import functools
 import json
 import os
 import requests
+import signal
 import time
 import websockets
 
 __API_KEY = ""
-__SELF = {}
+__EVENT_LOOP = None
+SELF = {}
 __TEAM = {}
 __WSS_URL = ""
 __SOCKET = None
@@ -21,7 +24,7 @@ __LAST_ACTIVITY = None
 __PING_INTERVAL = 15
 
 def connect(callback):
-    global __API_KEY, __SELF, __TEAM, __WSS_URL, __SOCKET, __CALLBACK, __LAST_ACTIVITY
+    global __API_KEY, SELF, __TEAM, __WSS_URL, __SOCKET, __CALLBACK, __LAST_ACTIVITY, __EVENT_LOOP
     if __API_KEY == "":
         print("[!] slack.connect() No API key!")
         return False
@@ -32,12 +35,25 @@ def connect(callback):
     j = json.loads(c)
     if j["ok"] == False:
         return False
-    __SELF = j["self"]
+    SELF = j["self"]
     __TEAM = j["team"]
     __WSS_URL = j["url"]
     __LAST_ACTIVITY = time.time()
-    tasks = asyncio.gather(sniff(), ping())
-    asyncio.get_event_loop().run_until_complete(tasks)
+    __EVENT_LOOP = asyncio.get_event_loop()
+
+    for sig in ('SIGINT', 'SIGTERM'):
+        __EVENT_LOOP.add_signal_handler(getattr(signal, sig), functools.partial(terminate, sig))
+    tasks = [__EVENT_LOOP.create_task(sniff()),__EVENT_LOOP.create_task(ping())]
+    asyncio.gather(*tasks)
+    print("[+] Ready.")
+    try:
+        __EVENT_LOOP.run_forever()
+    finally:
+        __EVENT_LOOP.close()
+
+def terminate(sig):
+    __EVENT_LOOP.stop()
+
 
 async def sniff():
     global __LAST_ACTIVITY, __SOCKET
@@ -49,13 +65,8 @@ async def sniff():
                 update_activity()
                 __CALLBACK(m)
             except websockets.exceptions.ConnectionClosed as e:
-                print("[!] sniff() Socket closed. reconnecting...", time.time())
-                try:
-                    time.sleep(5)
-                    __SOCKET = websockets.connect(__WSS_URL, ssl=True)
-                    print("[+]     sniff() Reconnected at", time.time())
-                except Exception as e:
-                    print("[!]     sniff() Re-connect failed!", e)
+                print("[!] sniff() Socket closed. terminating.", time.time())
+                terminate('SIGINT')
 
 async def ping():
     while True:
@@ -66,8 +77,9 @@ async def ping():
             elapsed = 0
             #print("[DEBUG] ping()")
             try:
-                __SOCKET.ping()
+                await __SOCKET.ping()
             except:
+                print("[!] ping failed.")
                 pass
         #print("[DEBUG] ping() sleeping", __PING_INTERVAL-elapsed)
         await asyncio.sleep(__PING_INTERVAL-elapsed)
@@ -76,12 +88,14 @@ def update_activity():
     global __LAST_ACTIVITY
     __LAST_ACTIVITY = time.time()
 
-def disconnect():
-    pass
-
-def send_msg():
+def send_msg(message):
     update_activity()
     print("[DEBUG] slack.send_msg()", __LAST_ACTIVITY)
+    try:
+        print("[DEBUG] sending msg:", message)
+    except websockets.exceptions.ConnectionClosed as e:
+        print("[!] sniff() Socket closed. terminating.", time.time())
+        terminate('SIGINT')
 
 def init():
     global __API_KEY
