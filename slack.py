@@ -40,12 +40,13 @@ def connect(callback):
     __WSS_URL = j["url"]
     __LAST_ACTIVITY = time.time()
     __EVENT_LOOP = asyncio.get_event_loop()
+    print("[+] TEAM:", __TEAM)
+    print("[+]  BOT:", SELF)
 
-    for sig in ('SIGINT', 'SIGTERM'):
+    for sig in ("SIGINT", "SIGTERM"):
         __EVENT_LOOP.add_signal_handler(getattr(signal, sig), functools.partial(terminate, sig))
     tasks = [__EVENT_LOOP.create_task(sniff()),__EVENT_LOOP.create_task(ping())]
     asyncio.gather(*tasks)
-    print("[+] Ready.")
     try:
         __EVENT_LOOP.run_forever()
     finally:
@@ -63,10 +64,10 @@ async def sniff():
             try:
                 m = await __SOCKET.recv()
                 update_activity()
-                __CALLBACK(m)
+                await __CALLBACK(m)
             except websockets.exceptions.ConnectionClosed as e:
                 print("[!] sniff() Socket closed. terminating.", time.time())
-                terminate('SIGINT')
+                terminate("SIGINT")
 
 async def ping():
     while True:
@@ -78,9 +79,11 @@ async def ping():
             #print("[DEBUG] ping()")
             try:
                 await __SOCKET.ping()
-            except:
+            except websockets.exceptions.ConnectionClosed:
+                terminate("SIGINT")
+            except Exception as e:
                 print("[!] ping failed.")
-                pass
+                print("[!]     ", e)
         #print("[DEBUG] ping() sleeping", __PING_INTERVAL-elapsed)
         await asyncio.sleep(__PING_INTERVAL-elapsed)
 
@@ -88,11 +91,26 @@ def update_activity():
     global __LAST_ACTIVITY
     __LAST_ACTIVITY = time.time()
 
-def send_msg(message):
+async def send_msg(channel, message):
+    global __SOCKET
     update_activity()
-    print("[DEBUG] slack.send_msg()", __LAST_ACTIVITY)
+    msg = ""
+    #print("[DEBUG] slack.send_msg()", __LAST_ACTIVITY)
+    if type(message) is str:
+        try:
+            # Unmarshall from json string
+            msg = json.loads(message)
+        except:
+            # message is not a json string, create a Slack json
+            # message.
+            msg = {"id": int(time.time()*100), "type": "message", "channel": channel, "text": message}
+    else:
+        return
+    # Send the json frame
+    print("[DEBUG] sending:", msg)
     try:
         print("[DEBUG] sending msg:", message)
+        await __SOCKET.send(json.dumps(msg))
     except websockets.exceptions.ConnectionClosed as e:
         print("[!] sniff() Socket closed. terminating.", time.time())
         terminate('SIGINT')
