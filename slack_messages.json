@@ -1,0 +1,5 @@
+{"type": "hello"}
+{"type":"user_typing","channel":"C6NQJSFRD","user":"U3GM4R9RD"}
+{"type":"user_typing","channel":"D9QSXR4D8","user":"U3GM4R9RD"}
+{"type":"message","user":"U3GM4R9RD","text":"<@U9QSQEH0S> hello","client_msg_id":"c6bd39a3-0aea-4fe8-96fa-4bed53d4cdc6","team":"T3FA95B5F","channel":"D9QSXR4D8","event_ts":"1533352498.000020","ts":"1533352498.000020"}
+{"type":"desktop_notification","title":"cybersnhupers","subtitle":"mattweidner","msg":"1533352498.000020","ts":"1533352498.000020","content":"@secretsquirrel hello","channel":"D9QSXR4D8","launchUri":"slack:\/\/channel?id=D9QSXR4D8&message=1533352498000020&team=T3FA95B5F","avatarImage":"https:\/\/avatars.slack-edge.com\/2018-05-30\/372813993285_66bebb6b318fa33347fa_192.png","ssbFilename":"knock_brush.mp3","imageUri":null,"is_shared":false,"event_ts":"1533352498.000052"}

@@ -1,0 +1,8 @@
+main thread
+init()
+start 2 co-routines, run until finished:
+	slack.listen()
+	slack.ping()
+reconnect()
+restart co-routines()
+
