@@ -19,7 +19,7 @@ def say_codename(args):
 
 def init():
     global __ADJECTIVES, __NOUNS
-    print("[DEBUG] [mod_codename.py] init() Initializing mod_codename...")
+    print("[DEBUG] [mod_codename.py] init()")
     adj_path = pathlib.Path("modules/codename/adjectives-clean.txt")
     noun_path = pathlib.Path("modules/codename/nouns-clean.txt")
     for line in adj_path.open():

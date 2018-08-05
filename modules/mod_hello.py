@@ -26,7 +26,7 @@ def say_hello(args):
 
 
 def init():
-    print("[DEBUG] [mod_hello.py] init() Initializing mod_hello...")
+    print("[DEBUG] [mod_hello.py] init()")
     pass
 
 def main():

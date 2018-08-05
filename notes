@@ -6,3 +6,6 @@ start 2 co-routines, run until finished:
 reconnect()
 restart co-routines()
 
+
+add snark if @crackquirrel is detected in a message but it is not the first word of the message.
+	"Right back at ya, " + SENDER
