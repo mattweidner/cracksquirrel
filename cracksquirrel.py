@@ -61,8 +61,16 @@ async def bot_callback(message):
     if msg["type"] == "hello":
         print("[+] Ready.")
     if msg["type"] == "message":
-        print("[DEBUG] T:", msg["team"], "C:", msg["channel"], "U:", msg["user"])
-        print("[DEBUG]", msg["text"])
+        if "message" in msg.keys():
+            if "edited" in msg["message"]:
+                chan = msg["channel"]
+                msg = msg["message"]
+                msg["channel"] = chan
+        try:
+            print("C:", msg["channel"], "U:", msg["user"])
+            print("[DEBUG]", msg["text"])
+        except KeyError:
+            print("[DEBUG] bot_callback() KeyError:", msg)
         if "@"+slack.SELF["name"] in msg["text"] or "@"+slack.SELF["id"] in msg["text"]:
             #print("[DEBUG] bot_callback() detected self.")
             #print("[DEBUG] evaluating message:", msg)
