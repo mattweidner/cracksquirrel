@@ -14,7 +14,7 @@ import time
 import websockets
 
 __API_KEY = ""
-__EVENT_LOOP = None
+EVENT_LOOP = None
 SELF = {}
 __TEAM = {}
 __WSS_URL = ""
@@ -24,7 +24,7 @@ __LAST_ACTIVITY = None
 __PING_INTERVAL = 15
 
 def connect(callback):
-    global __API_KEY, SELF, __TEAM, __WSS_URL, __SOCKET, __CALLBACK, __LAST_ACTIVITY, __EVENT_LOOP
+    global __API_KEY, SELF, __TEAM, __WSS_URL, __SOCKET, __CALLBACK, __LAST_ACTIVITY, EVENT_LOOP
     if __API_KEY == "":
         print("[!] slack.connect() No API key!")
         return False
@@ -39,21 +39,20 @@ def connect(callback):
     __TEAM = j["team"]
     __WSS_URL = j["url"]
     __LAST_ACTIVITY = time.time()
-    __EVENT_LOOP = asyncio.get_event_loop()
     print("[+] TEAM:", __TEAM)
     print("[+]  BOT:", SELF)
 
     for sig in ("SIGINT", "SIGTERM"):
-        __EVENT_LOOP.add_signal_handler(getattr(signal, sig), functools.partial(terminate, sig))
-    tasks = [__EVENT_LOOP.create_task(sniff()),__EVENT_LOOP.create_task(ping())]
+        EVENT_LOOP.add_signal_handler(getattr(signal, sig), functools.partial(terminate, sig))
+    tasks = [EVENT_LOOP.create_task(sniff()),EVENT_LOOP.create_task(ping())]
     asyncio.gather(*tasks)
     try:
-        __EVENT_LOOP.run_forever()
+        EVENT_LOOP.run_forever()
     finally:
-        __EVENT_LOOP.close()
+        EVENT_LOOP.close()
 
 def terminate(sig):
-    __EVENT_LOOP.stop()
+    EVENT_LOOP.stop()
 
 
 async def sniff():
@@ -107,24 +106,25 @@ async def send_msg(channel, message):
     else:
         return
     # Send the json frame
-    print("[DEBUG] sending:", msg)
     try:
-        print("[DEBUG] sending msg:", message)
+        print("[DEBUG] send_msg():", message)
         await __SOCKET.send(json.dumps(msg))
     except websockets.exceptions.ConnectionClosed as e:
-        print("[!] sniff() Socket closed. terminating.", time.time())
+        print("[!] slack.send_msg() Socket closed. terminating.", time.time())
         terminate('SIGINT')
 
 def init():
-    global __API_KEY
+    global __API_KEY, EVENT_LOOP
     try:
         __API_KEY = os.environ["SLACK_API_KEY"]
     except KeyError:
         print("[!] slack.init() No SLACK_API_KEY env var set.")
         __API_KEY = ""
-    #print("[DEBUG] SLACK_API_KEY from env:", API_KEY)
+    EVENT_LOOP = asyncio.get_event_loop()
+    #print("[DEBUG] SLACK_API_KEY from env:", __API_KEY)
 
 def main():
+    init()
     print(__API_KEY)
 
 if __name__ == "slack":

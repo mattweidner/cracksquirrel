@@ -65,12 +65,15 @@ async def bot_callback(message):
             if "edited" in msg["message"]:
                 chan = msg["channel"]
                 msg = msg["message"]
+                if msg["user"] == slack.SELF["id"]:
+                    return
                 msg["channel"] = chan
         try:
             print("C:", msg["channel"], "U:", msg["user"])
             print("[DEBUG]", msg["text"])
         except KeyError:
             print("[DEBUG] bot_callback() KeyError:", msg)
+            return
         if "@"+slack.SELF["name"] in msg["text"] or "@"+slack.SELF["id"] in msg["text"]:
             #print("[DEBUG] bot_callback() detected self.")
             #print("[DEBUG] evaluating message:", msg)
@@ -88,7 +91,7 @@ async def bot_callback(message):
                             print("[!] Error calling module function", mod_cmd)
                             print("[!]", e)
                             return
-                        print("[DEBUG] bot_callback() module response:", response)
+                        #print("[DEBUG] bot_callback() module response:", response)
                         await slack.send_msg(msg["channel"], response)
                 #print("[DEBUG] bot_callback() exiting for loop.")
             if not matched:
