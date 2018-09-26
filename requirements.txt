@@ -1,0 +1,4 @@
+lxml==4.2.4
+requests==2.18.4
+slackclient==1.2.1
+websockets==6.0

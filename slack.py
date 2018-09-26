@@ -45,7 +45,7 @@ def connect(callback):
     for sig in ("SIGINT", "SIGTERM"):
         EVENT_LOOP.add_signal_handler(getattr(signal, sig), functools.partial(terminate, sig))
     tasks = [EVENT_LOOP.create_task(sniff()),EVENT_LOOP.create_task(ping())]
-    asyncio.gather(*tasks)
+    #asyncio.gather(*tasks)
     try:
         EVENT_LOOP.run_forever()
     finally:
@@ -92,6 +92,8 @@ def update_activity():
 
 async def send_msg(channel, message):
     global __SOCKET
+    if __SOCKET is None:
+        return
     update_activity()
     msg = ""
     #print("[DEBUG] slack.send_msg()", __LAST_ACTIVITY)

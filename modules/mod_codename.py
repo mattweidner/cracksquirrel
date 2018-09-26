@@ -2,6 +2,8 @@
 # Date: 2018-08-03
 # Author: Matt Weidner <matt.weidner@gmail.com>
 # Description: Slackbot cyber op codename generator
+#              Wordlist sourced from Princeton University WordNet database
+#              https://wordnet.princeton.edu/  
 #
 import pathlib
 import random

@@ -1,4 +1,4 @@
-# File: mod_hello.py
+# File: mod_snozzberry.py
 # Date: 2018-08-03
 # Author: Matt Weidner <matt.weidner@gmail.com>
 # Description: Snozzberry module
@@ -9,16 +9,18 @@ import time
 
 responses = [ "Squirrel’s don’t eat snozzberries, you moron. Unless they're on crack.",
               "All I know about snozzberries is they taste like snozzberries.",
-              "So THAT's what they're calling the new Adobe Flash exploit.",
-              "Back at you!",
+              "Snozzberry Pi you say? Yum.",
+              "https://preview.ibb.co/miT7Ue/snozzberry_cat.jpg",
               "Have you tasted a snozzberry? Nasty...",
               "Do you know where I can get some?",
               "Who's your supplier? Let me guess... @miller1371?",
               "Who's your supplier? Let me guess... @Ryan Hopkins?",
-              "One does not simply TASTE a snozzberry.",
-              "You can't eat just one!"
+              "https://i.imgflip.com/2h5878.jpg",
+              "Snozzberries... You can't eat just one!\nhttps://image.ibb.co/nr8dcz/square_Snozzberry.jpg"
 
         ]
+
+
 
 def get_commands():
     return [{"command": "snozzberry", "callback": say_snozz},
@@ -29,13 +31,12 @@ def say_snozz(args):
 
 
 def init():
-    print("[DEBUG] [mod_hello.py] init()")
-    pass
+    print("[DEBUG] [mod_snozzberry.py] init()")
 
 def main():
-    pass
+	print(say_snozz("arg"))
 
-if __name__ == "modules.mod_hello":
+if __name__ == "modules.mod_snozzberry":
     init()
 
 if __name__ == "__main__":
