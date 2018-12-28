@@ -1,2 +1,4 @@
 __pycache__/
 apikey.txt
+core
+test-*.py

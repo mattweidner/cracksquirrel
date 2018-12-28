@@ -11,6 +11,7 @@ import os
 import requests
 import signal
 import time
+import urllib.parse
 import websockets
 
 __API_KEY = ""
@@ -34,6 +35,7 @@ def connect(callback):
     c = r.content.decode("utf-8")
     j = json.loads(c)
     if j["ok"] == False:
+        print(j)
         return False
     SELF = j["self"]
     __TEAM = j["team"]
@@ -77,6 +79,8 @@ async def ping():
             elapsed = 0
             #print("[DEBUG] ping()")
             try:
+                if __SOCKET is None:
+                    terminate("SIGINT")
                 await __SOCKET.ping()
             except websockets.exceptions.ConnectionClosed:
                 terminate("SIGINT")
@@ -90,6 +94,18 @@ def update_activity():
     global __LAST_ACTIVITY
     __LAST_ACTIVITY = time.time()
 
+async def send_attachment(message):
+    for attachment in message["attachments"]:
+        if "image_url" in attachment.keys():
+            attachment["image_url"] = attachment["image_url"].replace(" ", "%20")
+    attachments = urllib.parse.quote(json.dumps(message["attachments"]))
+    # 'username': 'bot', 'bot_id': 'B9QAEBQUR'
+    url = "https://slack.com/api/chat.postMessage?token="+__API_KEY+"&channel="+message["channel"]+"&as_user=true&username="+SELF["name"]+"&bot_id="+SELF["id"]+"&attachments="+attachments+"&text=\""+message["text"]+"\""
+    print("[DEBUG] send_attachment:", message)
+    print("[DEBUG] send_attachment:", url)
+    r = requests.request("GET", url)
+    print(r.json())
+
 async def send_msg(channel, message):
     global __SOCKET
     if __SOCKET is None:
@@ -97,6 +113,7 @@ async def send_msg(channel, message):
     update_activity()
     msg = ""
     #print("[DEBUG] slack.send_msg()", __LAST_ACTIVITY)
+    print("[DEBUG] slack.send_msg()", message)
     if type(message) is str:
         try:
             # Unmarshall from json string
@@ -107,9 +124,20 @@ async def send_msg(channel, message):
             msg = {"id": int(time.time()*100), "type": "message", "channel": channel, "text": message}
     else:
         return
+    if "channel" not in msg.keys():
+        msg["channel"] = channel
+
+    print("[DEBUG] send_msg: channel", msg["channel"])
+    # attachments are not supported using thr RTM API websocket
+    # You MUST send these using the chat.postMessage method URL
+    # https://slack.com/api/chat.postMessage
+    if "attachments" in msg.keys():
+        # Send using chat.postMessage
+        await send_attachment(msg)
+        return
     # Send the json frame
     try:
-        print("[DEBUG] send_msg():", message)
+        print("[DEBUG] send_msg():", msg)
         await __SOCKET.send(json.dumps(msg))
     except websockets.exceptions.ConnectionClosed as e:
         print("[!] slack.send_msg() Socket closed. terminating.", time.time())

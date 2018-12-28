@@ -15,6 +15,7 @@ import time
 __EVENT_LOOP = None
 __EXPIRE_TIME = 0
 __TITLE = ""
+__THUMB = ""
 TIMER = None
 ANNOUNCE_CHANNEL = "C6NQJSFRD"
 TEST_CHANNEL = "GAE4LF0RH"
@@ -42,7 +43,7 @@ def get_commands():
 			{"command": "packtbook", "callback": say_packt_book}]
 
 def grab_book():
-	global __EXPIRE_TIME, __TITLE
+	global __EXPIRE_TIME, __TITLE, __THUMB
 	if int(time.time()) >= __EXPIRE_TIME or __TITLE == "":
 		HEADERS = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:61.0) Gecko/20100101 Firefox/61.0"}
 		r = requests.request("GET", "https://www.packtpub.com/packt/offers/free-learning", data="", headers=HEADERS)
@@ -56,18 +57,25 @@ def grab_book():
 		__EXPIRE_TIME = int(r[0])
 		#log("[DEBUG]", __EXPIRE_TIME, __TITLE)
 		r = tree.xpath('//div[@class="dotd-title"]/h2/text()')
+		if r[0].strip() == "":
+			__TITLE = "No free book info published at this time." 
+			__EXPIRE_TIME = int(time.time())+3600 # 1 hour.
+			return
 		__TITLE = r[0].strip()
-#		r = tree.xpath('//noscript/img[@class="bookimage imagecache imagecache-dotd_main_image"]/@src')
-#		image = r[0]
+		r = tree.xpath('//img[@class="bookimage imagecache imagecache-dotd_main_image"]/@src')
+		print("[DEBUG] image thumbnail:", r[0].strip())
+		__THUMB = r[0].strip()
 	return
 
 def say_packt_book(args):
-	global __TITLE, __EXPIRE_TIME
+	global __TITLE, __EXPIRE_TIME, __THUMB
 	print("[mod_packt] say_packt_book()", args)
 	#p = await grab_book()
 	grab_book()
-	response = " ".join(["The current free Packt book is", '"'+__TITLE+'"', "\nThe offer will expire in", countdown(int(__EXPIRE_TIME-int(time.time()))),"\nYou can grab it here: https://www.packtpub.com/packt/offers/free-learning"])
-	#log("[DEBUG]", response)
+	#response = json.dumps({"id": int(time.time()*100), "type": "message", "channel": ANNOUNCE_CHANNEL, "attachments": [{"pretext": "The current free Packt book is:", "title": __TITLE, "title_link": "https://www.packtpub.com/packt/offers/free-learning", "footer": "This offer will expire in "+countdown(int(__EXPIRE_TIME-int(time.time()))), "color": "#009933"}]})
+	response = json.dumps({"id": int(time.time()*100), "type": "message", "text": "The current free Packt book is:", "attachments":[{"title": __TITLE, "title_link": "https://www.packtpub.com/packt/offers/free-learning", "footer": "This offer will expire in "+countdown(int(__EXPIRE_TIME-int(time.time()))), "color": "#009933", "image_url": __THUMB, "fallback": "", "text": ""}]})
+	#response = " ".join(["The current free Packt book is", '"'+__TITLE+'"', "\nThe offer will expire in", countdown(int(__EXPIRE_TIME-int(time.time()))),"\nYou can grab it here: https://www.packtpub.com/packt/offers/free-learning"])
+	log("[DEBUG] say_packt_book()", response)
 	return(response)
 	#return "The packt and packtbook commands are not implemented."
 	
@@ -87,8 +95,9 @@ async def auto_announce():
 			#TIMER = Timer(now+wait, auto_announce)
 			await asyncio.sleep(wait)
 			continue
-		log("[DEBUG] announcing new book...")
 		announcement = say_packt_book({})
+		log("[DEBUG] announcing new book...")
+		log(announcement)
 		announce_task = slack.EVENT_LOOP.create_task(slack.send_msg(ANNOUNCE_CHANNEL, announcement))
 		# sleep for 1 hour, there won't be a new book for AT LEAST that long! lol.
 		wait = 3600
