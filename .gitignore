@@ -1,4 +1,5 @@
 __pycache__/
 apikey.txt
 core
+notes
 test-*.py
